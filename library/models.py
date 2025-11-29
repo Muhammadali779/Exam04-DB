@@ -78,3 +78,10 @@ class Borrow(Base):
     student = relationship("Student", back_populates="borrows")
     book = relationship("Book", back_populates="borrows")
 
+
+    
+    def __str__(self):
+        return f'Borrow (id={self.id}, name="{self.student_id} {self.book_id}")'
+
+    def __repr__(self):
+        return f'Borrow (id={self.id}, name="{self.student_id} {self.book_id}")'
