@@ -16,6 +16,8 @@ def create_author(name: str, bio: str = None) -> Author:
     with get_db() as session:
         session.add(author)
         session.commit()
+        session.refresh(author)
+        return author
 
 def get_author_by_id(author_id: int) -> Author | None:
     """ID bo'yicha muallifni olish"""
@@ -75,7 +77,6 @@ def create_book(title: str, author_id: int, published_year: int, isbn: str = Non
         session.add(book)
         session.commit()
         
-
 def get_book_by_id(book_id: int) -> Book | None:
     """ID bo'yicha kitobni olish"""
     with get_db() as session:
@@ -258,7 +259,23 @@ def get_books_by_author(author_id: int) -> list[Book]:
 def get_overdue_borrows() -> list[tuple[Borrow, Student, Book, int]]:
     """
     Kechikkan kitoblar ro'yxati
+    
     Returns:
-    List of tuples: (Borrow, Student, Book, kechikkan_kunlar)
-    faqat returned_at=NULL va due_date o'tgan yozuvlar
+        List of tuples: (Borrow, Student, Book, kechikkan_kunlar)
+        faqat returned_at=NULL va due_date o'tgan yozuvlar
     """
+    with get_db() as session:
+        now = datetime.now()
+        borrows = session.query(Borrow).filter(
+            Borrow.returned_at == None,
+            Borrow.due_date < now
+        ).all()
+        
+        result = []
+        for borrow in borrows:
+            student = session.get(Student, borrow.student_id)
+            book = session.get(Book, borrow.book_id)
+            days_late = (now - borrow.due_date).days
+            result.append((borrow, student, book, days_late))
+        
+        return result
